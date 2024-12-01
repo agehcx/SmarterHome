@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include "DHT.h"
 #include <Adafruit_Sensor.h>
+#include "camera.h"
 
 #define DHTTYPE DHT22
 const int dhtPin = 33;
@@ -11,8 +12,8 @@ int tempPort = 33;
 int rainPort = 34;
 int motorPort = 35;
 
-const char* ssid1 = "Chega";
-const char* password1 = "qazplmvgty";
+const char* ssid1 = "DanieL";
+const char* password1 = "zazaza6655";
 
 void initWifi() {
   WiFi.mode(WIFI_AP_STA);
@@ -32,6 +33,7 @@ void setup() {
   pinMode(motorPort, OUTPUT);
   pinMode(motionPort, INPUT);
   Serial.begin(115200);
+  setupCamera();
 
   initWifi();
 
@@ -42,10 +44,10 @@ void readTemp() {
   float temp = dht.readTemperature();
   float humid = dht.readHumidity();
 
-  if (isnan(temp) || isnan(humid)) {
-    Serial.println("\nFailed to read from DHT sensor!");
-    return;
-  }
+  // if (isnan(temp) || isnan(humid)) {
+  //   Serial.println("\nFailed to read from DHT sensor!");
+  //   return;
+  // }
 
   Serial.print("\nCurrent temp : ");
   Serial.print(temp);
@@ -62,12 +64,12 @@ void readRain() {
 }
 
 void readMotion() {
-  bool hasMotion = digitalRead(motionPort);
+  int hasMotion = digitalRead(motionPort);
   Serial.print("\nMotion Sensor : ");
-  if (hasMotion) {
-    Serial.println("Motion Detected");
-  } else {
+  if (hasMotion == LOW) {
     Serial.println("No Motion");
+  } else {
+    Serial.println("Motion Detected");
   }
 }
 
