@@ -2,16 +2,27 @@
 #include "DHT.h"
 #include <Adafruit_Sensor.h>
 #include "camera.h"
+#include <PubSubClient.h> // ไลบรารีสำหรับ MQTT
 
 #define DHTTYPE DHT11
 const int dhtPin = 33;
 DHT dht(dhtPin, DHTTYPE);
 
-int motionPort = 14; // Use a pin from ADC1, e.g., GPIO14
-int rainPort = 34;   // GPIO34 is fine for analog input
+int motionPort = 14; // ใช้ GPIO14 สำหรับ Motion Sensor
+int rainPort = 34;   // ใช้ GPIO34 สำหรับ Rain Sensor
 
 const char* ssid1 = "Chega";
 const char* password1 = "qazplmvgty";
+
+// MQTT Broker Settings
+const char* mqtt_server = "broker.hivemq.com"; // หรือใช้ IP ของ Broker
+const char* mqtt_topic_temp = "sensor/temp";
+const char* mqtt_topic_humid = "sensor/humidity";
+const char* mqtt_topic_rain = "sensor/rain";
+const char* mqtt_topic_motion = "sensor/motion";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 void initWifi() {
   WiFi.mode(WIFI_AP_STA);
@@ -26,18 +37,34 @@ void initWifi() {
   Serial.println(WiFi.localIP());
 }
 
+void reconnectMQTT() {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    if (client.connect("ESP32Client")) { // ใช้ชื่ออุปกรณ์เพื่อระบุ Client
+      Serial.println("connected");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" trying again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
+
 void setup() {
   pinMode(rainPort, INPUT);
   pinMode(motionPort, INPUT);
   Serial.begin(115200);
-  
+
   // setupCamera(); // Uncomment if you plan to use a camera
 
   initWifi();
 
   dht.begin();
 
-  // Give the PIR sensor a few seconds to stabilize
+  client.setServer(mqtt_server, 1883); // กำหนด MQTT Broker และพอร์ต
+
+  // รอให้เซ็นเซอร์เสถียร
   delay(5000);
 }
 
@@ -56,13 +83,19 @@ void readTemp() {
   Serial.print("\nCurrent humidity : ");
   Serial.print(humid);
   Serial.println(" %");
+
+  // Publish ข้อมูลไปยัง MQTT Broker
+  client.publish(mqtt_topic_temp, String(temp).c_str());
+  client.publish(mqtt_topic_humid, String(humid).c_str());
 }
 
 void readRain() {
   int rain = analogRead(rainPort);
   Serial.print("Current rain : ");
   Serial.println(rain);
-  // Optionally, convert 'rain' to a percentage or meaningful value
+
+  // Publish ข้อมูลไปยัง MQTT Broker
+  client.publish(mqtt_topic_rain, String(rain).c_str());
 }
 
 void readMotion() {
@@ -70,12 +103,19 @@ void readMotion() {
 
   if (motion == LOW) {
     Serial.println("No Motion");
+    client.publish(mqtt_topic_motion, "No Motion");
   } else {
     Serial.println("Motion Detected");
+    client.publish(mqtt_topic_motion, "Motion Detected");
   }
 }
 
 void loop() {
+  if (!client.connected()) {
+    reconnectMQTT();
+  }
+  client.loop(); // ฟังก์ชันนี้ใช้ประมวลผล MQTT Callback และเชื่อมต่อใหม่ถ้าจำเป็น
+
   readTemp();
   readRain();
   readMotion();
