@@ -1,7 +1,10 @@
 #include <WiFi.h>
 #include "DHT.h"
+#include <Adafruit_Sensor.h>
 
-DHT dht;
+#define DHTTYPE DHT22
+const int dhtPin = 33;
+DHT dht(dhtPin, DHTTYPE);
 
 int motionPort = 32;
 int tempPort = 33;
@@ -10,9 +13,6 @@ int motorPort = 35;
 
 const char* ssid1 = "Chega";
 const char* password1 = "qazplmvgty";
-
-float temperature;
-float humidity;
 
 void initWifi() {
   WiFi.mode(WIFI_AP_STA);
@@ -30,12 +30,6 @@ void initWifi() {
   Serial.println();
 }
 
-void readTemp() {
-  Serial.println("Current temp : ", dht.getTemperature());
-  Serial.println("Current humidity : ", dht.getHumidity());
-  delay(2000);
-}
-
 void setup() {
   // put your setup code here, to run once:
   pinMode(rainPort, INPUT);
@@ -46,12 +40,50 @@ void setup() {
 
   initWifi();
 
-  dht.setup(tempPort);
+  dht.begin();
+
+  // dht.setup(tempPort);
+
+}
+
+void readTemp() {
+  float temp = dht.readTemperature();
+  float humid = dht.readHumidity();
+  Serial.print("\nCurrent temp : ");
+  Serial.print(temp);
+  Serial.print("\nCurrent humidity : ");
+  Serial.print(humid);
+}
+
+void readRain() {
+  int rain = analogRead(rainPort);
+  
+  Serial.print("\nCurrent rain : ");
+  Serial.println(rain);
+}
+
+void readMotion() {
+  bool hasMotion = digitalRead(motionPort);
+
+  Serial.print("\nMotion Sensor : ");
+  
+  if (hasMotion) {
+    Serial.print("Motion Deteced");
+  } else {
+    Serial.print("No Motion");
+  }
 
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-
   readTemp();
+  readRain();
+  readMotion();
+
+  Serial.print("\n");
+  delay(1000);
+
+
 }
+
