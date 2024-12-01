@@ -23,17 +23,12 @@ void initWifi() {
     Serial.print(".");
   }
   Serial.println(String("\nConnected to the WiFi network (") + ssid1 + ")");
-
-  Serial.println();
   Serial.print("\nStation IP address: ");
-  Serial.print(WiFi.localIP());
-  Serial.println();
+  Serial.println(WiFi.localIP());
 }
 
 void setup() {
-  // put your setup code here, to run once:
   pinMode(rainPort, INPUT);
-  pinMode(tempPort, INPUT);
   pinMode(motorPort, OUTPUT);
   pinMode(motionPort, INPUT);
   Serial.begin(115200);
@@ -41,49 +36,45 @@ void setup() {
   initWifi();
 
   dht.begin();
-
-  // dht.setup(tempPort);
-
 }
 
 void readTemp() {
   float temp = dht.readTemperature();
   float humid = dht.readHumidity();
+
+  if (isnan(temp) || isnan(humid)) {
+    Serial.println("\nFailed to read from DHT sensor!");
+    return;
+  }
+
   Serial.print("\nCurrent temp : ");
   Serial.print(temp);
+  Serial.print(" °C");
   Serial.print("\nCurrent humidity : ");
   Serial.print(humid);
+  Serial.println(" %");
 }
 
 void readRain() {
   int rain = analogRead(rainPort);
-  
   Serial.print("\nCurrent rain : ");
   Serial.println(rain);
 }
 
 void readMotion() {
   bool hasMotion = digitalRead(motionPort);
-
   Serial.print("\nMotion Sensor : ");
-  
   if (hasMotion) {
-    Serial.print("Motion Deteced");
+    Serial.println("Motion Detected");
   } else {
-    Serial.print("No Motion");
+    Serial.println("No Motion");
   }
-
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   readTemp();
   readRain();
   readMotion();
-
-  Serial.print("\n");
-  delay(1000);
-
-
+  Serial.println();
+  delay(2000);
 }
-
