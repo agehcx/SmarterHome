@@ -3,17 +3,15 @@
 #include <Adafruit_Sensor.h>
 #include "camera.h"
 
-#define DHTTYPE DHT22
+#define DHTTYPE DHT11
 const int dhtPin = 33;
 DHT dht(dhtPin, DHTTYPE);
 
-int motionPort = 32;
-int tempPort = 33;
-int rainPort = 34;
-int motorPort = 35;
+int motionPort = 14; // Use a pin from ADC1, e.g., GPIO14
+int rainPort = 34;   // GPIO34 is fine for analog input
 
-const char* ssid1 = "DanieL";
-const char* password1 = "zazaza6655";
+const char* ssid1 = "Chega";
+const char* password1 = "qazplmvgty";
 
 void initWifi() {
   WiFi.mode(WIFI_AP_STA);
@@ -30,26 +28,29 @@ void initWifi() {
 
 void setup() {
   pinMode(rainPort, INPUT);
-  pinMode(motorPort, OUTPUT);
   pinMode(motionPort, INPUT);
   Serial.begin(115200);
-  setupCamera();
+  
+  // setupCamera(); // Uncomment if you plan to use a camera
 
   initWifi();
 
   dht.begin();
+
+  // Give the PIR sensor a few seconds to stabilize
+  delay(5000);
 }
 
 void readTemp() {
   float temp = dht.readTemperature();
   float humid = dht.readHumidity();
 
-  // if (isnan(temp) || isnan(humid)) {
-  //   Serial.println("\nFailed to read from DHT sensor!");
-  //   return;
-  // }
+  if (isnan(temp) || isnan(humid)) {
+    Serial.println("\nFailed to read from DHT sensor!");
+    return;
+  }
 
-  Serial.print("\nCurrent temp : ");
+  Serial.print("Current temp : ");
   Serial.print(temp);
   Serial.print(" °C");
   Serial.print("\nCurrent humidity : ");
@@ -59,14 +60,15 @@ void readTemp() {
 
 void readRain() {
   int rain = analogRead(rainPort);
-  Serial.print("\nCurrent rain : ");
+  Serial.print("Current rain : ");
   Serial.println(rain);
+  // Optionally, convert 'rain' to a percentage or meaningful value
 }
 
 void readMotion() {
-  int hasMotion = digitalRead(motionPort);
-  Serial.print("\nMotion Sensor : ");
-  if (hasMotion == LOW) {
+  int motion = digitalRead(motionPort);
+
+  if (motion == LOW) {
     Serial.println("No Motion");
   } else {
     Serial.println("Motion Detected");
@@ -78,5 +80,5 @@ void loop() {
   readRain();
   readMotion();
   Serial.println();
-  delay(2000);
+  delay(2000);  // Delay between readings
 }
