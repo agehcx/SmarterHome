@@ -227,11 +227,14 @@ void evaluateRules() {
 }
 
 // Function to initialize and test the servo
+
 void setServo() {
     delay(1000);
     myServo.write(0);
     delay(1000);
     myServo.write(90);
+    delay(1000);
+    myServo.write(0);
 }
 
 void setup() {
@@ -244,6 +247,9 @@ void setup() {
 
     // Initialize the servo
     myServo.attach(13); // Attach the servo to GPIO13
+    delay(2000);
+    setServo();
+    delay(2000);
 
     // Initialize Wi-Fi
     initWifi();
